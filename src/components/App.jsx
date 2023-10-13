@@ -1,63 +1,59 @@
-import React, { Component } from "react";
-import FeedbackOptions from "./FeedbackOptions/FeedbackOptions";
-import Section from "./Section/Section";
-import Statistics from "./Statistics/Statistics";
+import { Component } from "react";
+import ContactList from "./ContactList/ContactList";
+import ContactForm from "./ContactForm/ContactForm";
 import { Container } from "./index.styled";
-import Notification from "./Notification/Notification";
+import Filter from "./Filter/Filter";
+import { Notify } from 'notiflix/build/notiflix-notify-aio';
 
 class App extends Component {
   state = {
-    like: 0,
-    neutral: 0,
-    dislike: 0
-  };
+  contacts: [
+    {id: 'id-1', name: 'Misjko Lutij', number: '555-15-15'},
+    {id: 'id-2', name: 'Antonio Linuvui', number: '444-14-14'},
+    {id: 'id-3', name: 'Marusia Nechemna', number: '666-55-44'},
+     ],
+  filter: '',
 
-  countTotalFeedback = () => {
-    const { like, neutral, dislike } = this.state;
-    const feedbackValues = Object.values({ like, neutral, dislike });
-    return feedbackValues.reduce((total, value) => total + value, 0);
-  };
+  }
 
-  countPositiveFeedbackPercentage = () => {
-    const { like } = this.state;
-    const total = this.countTotalFeedback();
-    const percentage = total === 0 ? 0 : (like / total) * 100;
-    return Math.round(percentage) + "%";
-  };
+  addContactData = (newContact) => {
+    const isTrue = this.state.contacts.some(({name})=>name === newContact.name)
+    if (isTrue) {
+      Notify.failure(`${newContact.name} is already with us`)
+      return
+    }
+    this.setState(({contacts}) => ({
+    contacts: [newContact, ...contacts]
+  }))
+  }
 
-  handleFeedback = (e) => {
-    const buttonName = e.target.textContent;
-    this.setState((prevState) => ({
-      [buttonName.toLowerCase()]: prevState[buttonName.toLowerCase()] + 1
-    }));
-  };
+  removeContact = (id) => {
+		this.setState((prev) => ({
+			contacts: prev.contacts.filter((contact) => contact.id !== id),
+		}))
+	
+  }
 
+  getFilterContacts = () => {
+    const { contacts, filter } = this.state;
+    return contacts.filter(({name}) => name.toLowerCase().includes(filter.toLowerCase().trim()))
+  }
+
+  getFilterData = ({target:{value}}) => {
+    this.setState({
+      filter: value,
+      })
+  }
+  
   render() {
-    const { like, neutral, dislike } = this.state;
-    const total = this.countTotalFeedback(); 
-    return (
-      <Container>
-        <Section title="SHARE YOUR EXPERIENCES">
-          <FeedbackOptions
-            options={Object.keys(this.state)}
-            onLeaveFeedback={this.handleFeedback}
-          />
-        </Section>
-        <Section title="STATISTIC">
-          {total > 0 ? (
-            <Statistics
-              good={like}
-              neutral={neutral}
-              bad={dislike}
-              total={total} 
-              positivePercentage={this.countPositiveFeedbackPercentage()}
-            />
-          ) : (
-            <Notification message="THERE IS NO FEEDBACK" />
-          )}
-        </Section>
-      </Container>
-    );
+    const filterContacts = this.getFilterContacts();
+    return <Container>
+        <h1>PHONEBOOK</h1>
+      <ContactForm addContactData={ this.addContactData} />
+      <h2>CONTACTS</h2>
+      <Filter filter={this.state.filter} getFilterData={this.getFilterData} />
+      <ContactList contacts={filterContacts} removeContact={this.removeContact} getFilterContacts={ this.getFilterContacts} />
+    </Container>
   }
 }
 
